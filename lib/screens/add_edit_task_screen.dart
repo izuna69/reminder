@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'package:reminder/models/task.dart';
+import 'package:reminder/providers/task_provider.dart';
+
+class AddEditTaskScreen extends ConsumerStatefulWidget {
+  final Task? task; // 수정을 위해 기존 Task 객체를 받을 수 있음
+
+  const AddEditTaskScreen({super.key, this.task});
+
+  @override
+  ConsumerState<AddEditTaskScreen> createState() => _AddEditTaskScreenState();
+}
+
+class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _titleController;
+  late DateTime _selectedDate;
+  late List<ChecklistItem> _checklistItems;
+  late List<TextEditingController> _checklistItemControllers;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.task?.title ?? '');
+    _selectedDate = widget.task?.dueDate ?? DateTime.now();
+    _checklistItems = List<ChecklistItem>.from(widget.task?.details ?? []);
+    _checklistItemControllers = _checklistItems
+        .map((item) => TextEditingController(text: item.text))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    for (var controller in _checklistItemControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+    );
+    if (date == null) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_selectedDate),
+    );
+    if (time == null) return;
+
+    setState(() {
+      _selectedDate = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  void _addChecklistItem() {
+    setState(() {
+      _checklistItems.add(const ChecklistItem(text: ''));
+      _checklistItemControllers.add(TextEditingController());
+    });
+  }
+
+  void _removeChecklistItem(int index) {
+    setState(() {
+      _checklistItemControllers[index].dispose();
+      _checklistItems.removeAt(index);
+      _checklistItemControllers.removeAt(index);
+    });
+  }
+
+  void _saveTask() {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      final updatedChecklist = List.generate(_checklistItems.length, (index) {
+        return _checklistItems[index].copyWith(
+          text: _checklistItemControllers[index].text,
+        );
+      });
+
+      final task = Task(
+        id: widget.task?.id,
+        title: _titleController.text,
+        details: updatedChecklist,
+        dueDate: _selectedDate,
+        isCompleted: widget.task?.isCompleted ?? false,
+      );
+
+      if (widget.task == null) {
+        ref.read(taskListProvider.notifier).addTask(task);
+      } else {
+        ref.read(taskListProvider.notifier).updateTask(task);
+      }
+
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.task == null ? '새 할 일 추가' : '할 일 편집'),
+        actions: [
+          IconButton(icon: const Icon(Icons.save), onPressed: _saveTask),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: '제목',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '제목을 입력하세요.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                title: const Text('마감 기한'),
+                subtitle: Text(
+                  DateFormat('yyyy-MM-dd HH:mm').format(_selectedDate),
+                ),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: _pickDateTime,
+              ),
+              const SizedBox(height: 16),
+              Text('상세 항목', style: Theme.of(context).textTheme.titleMedium),
+              ...List.generate(_checklistItems.length, (index) {
+                return Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _checklistItemControllers[index],
+                        decoration: InputDecoration(
+                          labelText: '항목 ${index + 1}',
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () => _removeChecklistItem(index),
+                    ),
+                  ],
+                );
+              }),
+              TextButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text('항목 추가'),
+                onPressed: _addChecklistItem,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
