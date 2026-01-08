@@ -151,10 +151,18 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
               ...List.generate(_checklistItems.length, (index) {
                 return Row(
                   children: [
+                    SizedBox(height: 60),
                     Expanded(
                       child: TextFormField(
                         controller: _checklistItemControllers[index],
                         decoration: InputDecoration(
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              width: 1,
+                              color: Colors.white60,
+                            ),
+                            borderRadius: BorderRadius.circular(17),
+                          ),
                           labelText: '항목 ${index + 1}',
                         ),
                       ),

@@ -1,66 +1,43 @@
-# Gemini Project Context: Reminder App
+# 리마인더 앱 (Reminder App)
 
-## Project Overview
+Flutter로 제작된 모바일 중심의 할 일 관리 및 알림 애플리케이션입니다. 사용자가 할 일을 체계적으로 관리하고, 중요한 일정을 놓치지 않도록 로컬 알림 서비스를 제공합니다.
 
-This is a mobile-first "Reminder" application built with Flutter. Its primary purpose is to allow users to create, manage, and receive notifications for their to-do items.
+---
 
-The project was bootstrapped from a standard Flutter template and has since evolved to include several key features. It was initially designed with a local `sqflite` database for persistence, but was later refactored to use a temporary, in-memory data store at the user's request. **This means all tasks are lost when the app is closed.**
+## 프로젝트 개요
 
-### Key Technologies & Libraries
+이 프로젝트는 표준 Flutter 템플릿에서 시작하여 확장되었으며, 현재는 **인메모리(In-memory) 데이터 저장 방식**으로 동작합니다.
+> **주의:** 현재 버전은 데이터 영속성 레이어가 제거된 상태이므로, 앱을 완전히 종료하면 등록된 모든 할 일이 삭제됩니다.
 
-*   **Framework:** Flutter
-*   **Language:** Dart
-*   **State Management:** `flutter_riverpod` using the `StateNotifier` pattern. The state is managed in-memory.
-*   **Local Notifications:** `flutter_local_notifications` for scheduling reminders.
-*   **Home Screen Widget:** `home_widget` for displaying tasks on the Android home screen.
-*   **Internationalization/Formatting:** `intl` for date formatting.
-*   **Theming:** Supports light and dark mode switching.
+### 주요 기능
+* **할 일 관리:** 할 일(Task) 및 체크리스트 아이템 생성, 수정, 삭제.
+* **알림 기능:** `flutter_local_notifications`를 통한 맞춤형 리마인더 알림.
+* **홈 화면 위젯:** 안드로이드 홈 화면에서 할 일을 바로 확인할 수 있는 위젯 지원.
+* **테마 모드:** 사용자 설정에 따른 라이트/다크 모드 전환.
+* **다국어 지원:** `intl` 패키지를 활용한 한국어 날짜 및 시간 포맷팅.
 
-### Architecture
+---
 
-The application follows a clean, provider-based architecture, separating concerns into different layers:
+## 기술 스택
 
-*   `lib/models`: Contains the core data structure (`Task`, `ChecklistItem`). Models are immutable.
-*   `lib/providers`: Holds the Riverpod notifiers (`TaskListNotifier`, `ThemeNotifier`) that manage the application's state.
-*   `lib/screens`: Contains the main UI widgets for each screen (`HomeScreen`, `AddEditTaskScreen`).
-*   `lib/services`: Encapsulates logic for external interactions, like scheduling notifications (`NotificationService`) and updating the home screen widget (`WidgetService`).
-*   `docs/`: Contains project planning documents in Korean.
+| 분류 | 기술 |
+| :--- | :--- |
+| **Framework** | Flutter |
+| **Language** | Dart |
+| **State Management** | `flutter_riverpod` (StateNotifier Pattern) |
+| **Notifications** | `flutter_local_notifications` |
+| **Home Widget** | `home_widget` |
+| **Database** | In-memory (Temporary storage) |
 
-## Building and Running
+---
 
-This is a standard Flutter project.
+## 아키텍처 구조
 
-1.  **Get Dependencies:**
-    ```bash
-    flutter pub get
-    ```
+본 프로젝트는 **Provider 기반의 클린 아키텍처**를 지향하며 관심사를 분리합니다.
 
-2.  **Run the App:**
-    Connect a device or start an emulator, then run:
-    ```bash
-    flutter run
-    ```
+* `lib/models`: 불변(Immutable) 데이터 모델 (`Task`, `ChecklistItem`).
+* `lib/providers`: 앱 상태 관리 및 비즈니스 로직 (`TaskListNotifier` 등).
+* `lib/screens`: UI 레이어 (홈 화면, 수정 화면 등).
+* `lib/services`: 외부 API 및 플랫폼 기능 연동 (알림, 위젯 서비스).
+* `docs/`: 프로젝트 상세 기획 및 설계 문서 (한국어).
 
-3.  **Run Tests:**
-    The project contains a default widget test.
-    ```bash
-    flutter test
-    ```
-
-4.  **Build the App:**
-    To build a release version for Android, use:
-    ```bash
-    flutter build apk
-    ```
-    Or for an App Bundle:
-    ```bash
-    flutter build appbundle
-    ```
-
-## Development Conventions
-
-*   **State Management:** Use `flutter_riverpod`. For managing a list of items, follow the pattern in `TaskListNotifier` (`StateNotifier<List<Task>>`).
-*   **Data Models:** Models in `lib/models` should be immutable (annotated with `@immutable`) and include a `copyWith` method.
-*   **No Persistence:** Per user request, the project currently **does not** have a persistence layer. All data is managed in-memory by `TaskListNotifier` and will be lost on app restart. Future persistence logic should be integrated into the existing notifiers.
-*   **Platform-Specific Code:** Features that are not web-compatible (like local notifications and `sqflite` FFI initialization for desktop) are guarded with `if (!kIsWeb)`.
-*   **Language:** UI text is in Korean. Code, comments, and variable names are in English.

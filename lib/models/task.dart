@@ -3,10 +3,7 @@ import 'package:flutter/foundation.dart';
 /// 개별 체크리스트 항목을 나타내는 클래스
 @immutable
 class ChecklistItem {
-  const ChecklistItem({
-    required this.text,
-    this.isDone = false,
-  });
+  const ChecklistItem({required this.text, this.isDone = false});
 
   final String text;
   final bool isDone;
@@ -20,17 +17,11 @@ class ChecklistItem {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'text': text,
-      'isDone': isDone,
-    };
+    return {'text': text, 'isDone': isDone};
   }
 
   // 객체의 불변성을 유지하며 특정 속성만 변경하기 위한 copyWith 메서드
-  ChecklistItem copyWith({
-    String? text,
-    bool? isDone,
-  }) {
+  ChecklistItem copyWith({String? text, bool? isDone}) {
     return ChecklistItem(
       text: text ?? this.text,
       isDone: isDone ?? this.isDone,

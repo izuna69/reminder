@@ -39,9 +39,9 @@ class HomeScreen extends ConsumerWidget {
           padding: EdgeInsets.zero,
           children: [
             SizedBox(
-              height: 50,
+              height: 65,
               child: const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.blue),
+                decoration: BoxDecoration(color: Colors.black12),
                 child: Text("메늉"),
               ),
             ),
