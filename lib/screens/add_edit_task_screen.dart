@@ -68,7 +68,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
 
   void _addChecklistItem() {
     setState(() {
-      _checklistItems.add(const ChecklistItem(text: ''));
+      _checklistItems.add(ChecklistItem(text: ''));
       _checklistItemControllers.add(TextEditingController());
     });
   }
@@ -81,31 +81,43 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
     });
   }
 
-  void _saveTask() {
+  Future<void> _saveTask() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final updatedChecklist = List.generate(_checklistItems.length, (index) {
-        return _checklistItems[index].copyWith(
+      final updatedChecklist = List.generate(_checklistItemControllers.length, (
+        index,
+      ) {
+        return ChecklistItem(
           text: _checklistItemControllers[index].text,
+          isDone: _checklistItems[index].isDone,
         );
       });
 
-      final task = Task(
-        id: widget.task?.id,
-        title: _titleController.text,
-        details: updatedChecklist,
-        dueDate: _selectedDate,
-        isCompleted: widget.task?.isCompleted ?? false,
-      );
+      // 수정 모드 여부 확인
+      final isEditing = widget.task != null;
 
-      if (widget.task == null) {
-        ref.read(taskListProvider.notifier).addTask(task);
+      if (isEditing) {
+        final updatedTask = widget.task!.copyWith(
+          title: _titleController.text,
+          details: updatedChecklist,
+          dueDate: _selectedDate,
+        );
+        await ref.read(taskListProvider.notifier).updateTask(updatedTask);
       } else {
-        ref.read(taskListProvider.notifier).updateTask(task);
+        // ID는 notifier에서 생성하므로 여기서는 임의의 값(0)으로 전달
+        final newTask = Task(
+          id: 0,
+          title: _titleController.text,
+          details: updatedChecklist,
+          dueDate: _selectedDate,
+        );
+        await ref.read(taskListProvider.notifier).addTask(newTask);
       }
 
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 

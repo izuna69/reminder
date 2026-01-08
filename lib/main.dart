@@ -9,6 +9,8 @@ void main() async {
   // runApp 전에 비동기 작업을 수행하기 위해 필요합니다.
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Isar 데이터베이스 서비스를 초기화합니다.
+
   // 알림 서비스를 초기화합니다. (웹에서는 작동하지 않을 수 있음)
   if (!kIsWeb) {
     await NotificationService.instance.init();
@@ -30,14 +32,14 @@ class MyApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
+          seedColor: Colors.deepOrange,
           brightness: Brightness.light,
         ),
         useMaterial3: true,
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
+          seedColor: Colors.deepOrange,
           brightness: Brightness.dark,
         ),
         useMaterial3: true,

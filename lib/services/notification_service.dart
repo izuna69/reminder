@@ -28,16 +28,16 @@ class NotificationService {
     // iOS 초기화 설정
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
     final InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     // 플러그인 초기화
     await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
@@ -48,9 +48,10 @@ class NotificationService {
 
   // 권한 요청
   Future<void> _requestPermissions() async {
-    final plugin =
-        _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final plugin = _flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (plugin != null) {
       await plugin.requestNotificationsPermission();
     }
@@ -64,23 +65,26 @@ class NotificationService {
       return;
     }
 
-    final tz.TZDateTime scheduledDate =
-        tz.TZDateTime.from(task.dueDate, tz.local);
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(
+      task.dueDate,
+      tz.local,
+    );
 
     const AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-      'reminder_channel_id',
-      '리마인더 알림',
-      channelDescription: '예약된 할 일에 대한 알림을 보냅니다.',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
+          'reminder_channel_id',
+          '리마인더 알림',
+          channelDescription: '예약된 할 일에 대한 알림을 보냅니다.',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: false,
+        );
+    const NotificationDetails notificationDetails = NotificationDetails(
+      android: androidNotificationDetails,
     );
-    const NotificationDetails notificationDetails =
-        NotificationDetails(android: androidNotificationDetails);
 
     await _flutterLocalNotificationsPlugin.zonedSchedule(
-      task.id!, // non-null 보장
+      task.id! as int, // non-null 보장
       task.title,
       '예정된 할 일이 있습니다.',
       scheduledDate,

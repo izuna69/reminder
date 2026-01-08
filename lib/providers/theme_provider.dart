@@ -12,7 +12,7 @@ class ThemeNotifier extends Notifier<ThemeMode> {
   // 테마를 변경하는 메서드
   void toggleTheme() {
     // 현재 테마가 'dark'이면 'light'로, 아니면 'dark'로 변경
-    state = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    state = state == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
   }
 }
 
