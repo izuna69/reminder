@@ -55,7 +55,8 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
   }
 
   AppBar _buildEditAppBar(List<int> allTaskIds) {
-    final bool areAllSelected = _selectedTaskIds.length == allTaskIds.length && allTaskIds.isNotEmpty;
+    final bool areAllSelected =
+        _selectedTaskIds.length == allTaskIds.length && allTaskIds.isNotEmpty;
     final bool isIndeterminate = _selectedTaskIds.isNotEmpty && !areAllSelected;
 
     return AppBar(
@@ -123,14 +124,31 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
                               color: Colors.grey,
                             ),
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.restore_from_trash),
-                            tooltip: '복원',
-                            onPressed: () {
-                              ref
-                                  .read(taskListProvider.notifier)
-                                  .restoreTask(task.id);
-                            },
+
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.restore_from_trash),
+                                tooltip: '복원',
+                                onPressed: () {
+                                  ref
+                                      .read(taskListProvider.notifier)
+                                      .restoreTask(task.id);
+                                },
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_forever,
+                                ), // New icon
+                                tooltip: '삭제', // New tooltip
+                                onPressed: () {
+                                  ref
+                                      .read(taskListProvider.notifier)
+                                      .permanentlyDeleteTask(task.id);
+                                },
+                              ),
+                            ],
                           ),
                         ),
                 );
