@@ -23,8 +23,8 @@ class HomeWidgetFactory(private val context: Context) : RemoteViewsService.Remot
 
     override fun onDataSetChanged() {
         // 데이터가 변경될 때 Flutter에서 저장한 데이터를 다시 로드
-        val widgetData = HomeWidgetPlugin.getWidgetData(context)
-        val tasksJsonString = widgetData.getString("tasks", "[]")
+        val widgetData = HomeWidgetPlugin.getData(context)
+        val tasksJsonString = widgetData.getString("tasks", "[]") ?: "[]"
         val jsonArray = JSONArray(tasksJsonString)
         tasks = List(jsonArray.length()) { jsonArray.getString(it) }
     }

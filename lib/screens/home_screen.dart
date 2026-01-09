@@ -85,9 +85,13 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       );
                     },
-                    // [삭제] 이동 아이콘과 Row 위젯을 제거하고 다시 Checkbox만 배치함
+                    onLongPress: () {
+                      ref.read(taskListProvider.notifier).deleteTask(task.id);
+                    },
+
                     leading: Checkbox(
                       value: task.isCompleted,
+
                       onChanged: (bool? value) {
                         ref
                             .read(taskListProvider.notifier)

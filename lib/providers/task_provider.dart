@@ -22,8 +22,9 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // 새로운 Task를 추가합니다.
   Future<void> addTask(Task task) async {
-    final tasks = state.valueOrNull ?? [];
-    final newTask = task.copyWith(id: DateTime.now().millisecondsSinceEpoch);
+    final tasks = state.asData?.value ?? <Task>[];
+    final newId = DateTime.now().millisecondsSinceEpoch % 2147483647;
+    final newTask = task.copyWith(id: newId);
     final newTasks = [...tasks, newTask];
 
     await _setTasks(newTasks);
@@ -33,7 +34,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // Task를 업데이트합니다.
   Future<void> updateTask(Task task) async {
-    final tasks = state.valueOrNull ?? [];
+    final tasks = state.asData?.value ?? <Task>[];
     final newTasks = [
       for (final t in tasks)
         if (t.id == task.id) task else t,
@@ -64,7 +65,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // Task를 휴지통으로 보냅니다 (soft-delete).
   Future<void> deleteTask(int id) async {
-    final tasks = state.valueOrNull ?? [];
+    final tasks = state.asData?.value ?? <Task>[];
     Task? taskToUpdate;
     final newTasks = tasks.map((t) {
       if (t.id == id) {
@@ -83,7 +84,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // Task를 복원합니다.
   Future<void> restoreTask(int id) async {
-    final tasks = state.valueOrNull ?? [];
+    final tasks = state.asData?.value ?? <Task>[];
     Task? taskToUpdate;
     final newTasks = tasks.map((t) {
       if (t.id == id) {
@@ -102,7 +103,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // Task를 영구적으로 삭제합니다.
   Future<void> permanentlyDeleteTask(int id) async {
-    final tasks = state.valueOrNull ?? [];
+    final tasks = state.asData?.value ?? <Task>[];
     final newTasks = tasks.where((t) => t.id != id).toList();
     await _setTasks(newTasks);
     state = AsyncValue.data(newTasks);
@@ -117,7 +118,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // 여러 Task를 영구적으로 삭제합니다.
   Future<void> permanentlyDeleteMultipleTasks(List<int> ids) async {
-    final tasks = state.valueOrNull ?? [];
+    final tasks = state.asData?.value ?? <Task>[];
     final idSet = ids.toSet();
     final newTasks = tasks.where((t) => !idSet.contains(t.id)).toList();
 
@@ -142,7 +143,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // 체크리스트 항목의 완료 상태를 토글합니다.
   Future<void> toggleChecklistItem(int taskId, int itemIndex) async {
-    final tasks = state.valueOrNull ?? [];
+    final tasks = state.asData?.value ?? <Task>[];
     final task = tasks.firstWhere((t) => t.id == taskId);
 
     final newDetails = List<ChecklistItem>.from(task.details);
@@ -155,10 +156,8 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
   // 서비스 업데이트 헬퍼
   Future<void> _updateServices(Task task) async {
-    final tasks = state.valueOrNull ?? [];
-    await WidgetService.updateWidgetData(
-      tasks.where((t) => !t.isDeleted).toList(),
-    );
+    final tasks = state.asData?.value ?? <Task>[];
+    await WidgetService.updateWidgetData(tasks.where((t) => !t.isDeleted).toList());
     if (!kIsWeb) {
       if (!task.isCompleted && !task.isDeleted) {
         await NotificationService.instance.scheduleNotification(task);
