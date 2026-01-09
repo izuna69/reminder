@@ -86,8 +86,13 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       );
                     },
+                    onLongPress: () {
+                      ref.read(taskListProvider.notifier).deleteTask(task.id);
+                    },
+
                     leading: Checkbox(
                       value: task.isCompleted,
+
                       onChanged: (bool? value) {
                         // 완료 상태 변경
                         ref

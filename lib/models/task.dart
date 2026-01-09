@@ -37,6 +37,7 @@ class Task {
   final DateTime dueDate;
   final bool isCompleted;
   final bool isDeleted; // isDeleted 속성 추가
+  final bool isAlarmEnabled;
 
   const Task({
     required this.id,
@@ -45,6 +46,7 @@ class Task {
     required this.dueDate,
     this.isCompleted = false,
     this.isDeleted = false, // 생성자에 추가
+    this.isAlarmEnabled = true,
   });
 
   Task copyWith({
@@ -54,6 +56,7 @@ class Task {
     DateTime? dueDate,
     bool? isCompleted,
     bool? isDeleted, // copyWith에 추가
+    bool? isAlarmEnabled,
   }) {
     return Task(
       id: id ?? this.id,
@@ -62,6 +65,7 @@ class Task {
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
       isDeleted: isDeleted ?? this.isDeleted, // copyWith에 추가
+      isAlarmEnabled: isAlarmEnabled ?? this.isAlarmEnabled,
     );
   }
 
@@ -77,6 +81,7 @@ class Task {
       dueDate: DateTime.parse(json['dueDate']),
       isCompleted: json['isCompleted'],
       isDeleted: json['isDeleted'] ?? false, // fromJson에 추가
+      isAlarmEnabled: json['isAlarmEnabled'] ?? true,
     );
   }
 
@@ -88,6 +93,7 @@ class Task {
       'dueDate': dueDate.toIso8601String(),
       'isCompleted': isCompleted,
       'isDeleted': isDeleted, // toJson에 추가
+      'isAlarmEnabled': isAlarmEnabled,
     };
   }
 }

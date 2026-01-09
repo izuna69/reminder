@@ -19,6 +19,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
   late DateTime _selectedDate;
   late List<ChecklistItem> _checklistItems;
   late List<TextEditingController> _checklistItemControllers;
+  late bool _isAlarmEnabled;
 
   @override
   void initState() {
@@ -29,6 +30,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
     _checklistItemControllers = _checklistItems
         .map((item) => TextEditingController(text: item.text))
         .toList();
+    _isAlarmEnabled = widget.task?.isAlarmEnabled ?? true;
   }
 
   @override
@@ -102,6 +104,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
           title: _titleController.text,
           details: updatedChecklist,
           dueDate: _selectedDate,
+          isAlarmEnabled: _isAlarmEnabled,
         );
         await ref.read(taskListProvider.notifier).updateTask(updatedTask);
       } else {
@@ -111,6 +114,7 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
           title: _titleController.text,
           details: updatedChecklist,
           dueDate: _selectedDate,
+          isAlarmEnabled: _isAlarmEnabled,
         );
         await ref.read(taskListProvider.notifier).addTask(newTask);
       }
@@ -157,6 +161,15 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
                 ),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: _pickDateTime,
+              ),
+              SwitchListTile(
+                title: const Text('알람 활성화'),
+                value: _isAlarmEnabled,
+                onChanged: (value) {
+                  setState(() {
+                    _isAlarmEnabled = value;
+                  });
+                },
               ),
               const SizedBox(height: 16),
               Text('상세 항목', style: Theme.of(context).textTheme.titleMedium),
