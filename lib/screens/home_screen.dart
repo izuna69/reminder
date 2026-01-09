@@ -13,7 +13,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 활성화된(삭제되지 않은) task 목록을 감시
+    // 활성화된(삭제되지 않은) task 목록 감시
     final tasks = ref.watch(activeTasksProvider);
     final themeMode = ref.watch(themeProvider);
 
@@ -49,9 +49,8 @@ class HomeScreen extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.delete_sweep_outlined),
               title: const Text('휴지통'),
-
               onTap: () {
-                Navigator.of(context).pop(); // Drawer를 닫고
+                Navigator.of(context).pop(); // Drawer 닫기
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const TrashScreen()),
                 );
@@ -67,6 +66,7 @@ class HomeScreen extends ConsumerWidget {
                 style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
             )
+          // 순서 변경 기능을 제거하고 일반 ListView.builder로 복구함
           : ListView.builder(
               itemCount: tasks.length,
               itemBuilder: (context, index) {
@@ -78,7 +78,6 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   child: ListTile(
                     onTap: () {
-                      // 상세 보기 화면으로 이동
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -86,10 +85,10 @@ class HomeScreen extends ConsumerWidget {
                         ),
                       );
                     },
+                    // [삭제] 이동 아이콘과 Row 위젯을 제거하고 다시 Checkbox만 배치함
                     leading: Checkbox(
                       value: task.isCompleted,
                       onChanged: (bool? value) {
-                        // 완료 상태 변경
                         ref
                             .read(taskListProvider.notifier)
                             .toggleComplete(task);
@@ -104,13 +103,11 @@ class HomeScreen extends ConsumerWidget {
                       ),
                     ),
                     subtitle: Text(
-                      // 날짜 포맷 지정 (intl 패키지 필요)
                       DateFormat('yyyy-MM-dd HH:mm').format(task.dueDate),
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () {
-                        // 할 일 삭제 (휴지통으로 이동)
                         ref.read(taskListProvider.notifier).deleteTask(task.id);
                       },
                     ),
@@ -120,7 +117,6 @@ class HomeScreen extends ConsumerWidget {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // 새 할 일 추가 화면으로 이동
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const AddEditTaskScreen()),
