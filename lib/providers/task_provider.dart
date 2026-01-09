@@ -14,7 +14,9 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
   @override
   Future<List<Task>> build() async {
     final tasks = await _getTasks();
-    await WidgetService.updateWidgetData(tasks.where((t) => !t.isDeleted).toList());
+    await WidgetService.updateWidgetData(
+      tasks.where((t) => !t.isDeleted).toList(),
+    );
     return tasks;
   }
 
@@ -24,7 +26,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
     final newId = DateTime.now().millisecondsSinceEpoch % 2147483647;
     final newTask = task.copyWith(id: newId);
     final newTasks = [...tasks, newTask];
-    
+
     await _setTasks(newTasks);
     state = AsyncValue.data(newTasks);
     _updateServices(newTask);
@@ -34,11 +36,31 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
   Future<void> updateTask(Task task) async {
     final tasks = state.asData?.value ?? <Task>[];
     final newTasks = [
-      for (final t in tasks) if (t.id == task.id) task else t,
+      for (final t in tasks)
+        if (t.id == task.id) task else t,
     ];
     await _setTasks(newTasks);
     state = AsyncValue.data(newTasks);
     _updateServices(task);
+  }
+
+  // 상세 항목의 순서를 변경하고 저장합니다.
+  Future<void> reorderChecklistItem(
+    int taskId,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final tasks = state.valueOrNull ?? [];
+    final task = tasks.firstWhere((t) => t.id == taskId);
+
+    // 상세 항목 리스트 복사 및 순서 재배치
+    final newDetails = List<ChecklistItem>.from(task.details);
+    final item = newDetails.removeAt(oldIndex);
+    newDetails.insert(newIndex, item);
+
+    // 변경된 리스트로 Task 업데이트
+    final updatedTask = task.copyWith(details: newDetails);
+    await updateTask(updatedTask);
   }
 
   // Task를 휴지통으로 보냅니다 (soft-delete).
@@ -59,7 +81,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
       _updateServices(taskToUpdate!);
     }
   }
-  
+
   // Task를 복원합니다.
   Future<void> restoreTask(int id) async {
     final tasks = state.asData?.value ?? <Task>[];
@@ -85,11 +107,13 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
     final newTasks = tasks.where((t) => t.id != id).toList();
     await _setTasks(newTasks);
     state = AsyncValue.data(newTasks);
-    
+
     if (!kIsWeb) {
       await NotificationService.instance.cancelNotification(id);
     }
-    await WidgetService.updateWidgetData(newTasks.where((t) => !t.isDeleted).toList());
+    await WidgetService.updateWidgetData(
+      newTasks.where((t) => !t.isDeleted).toList(),
+    );
   }
 
   // 여러 Task를 영구적으로 삭제합니다.
@@ -97,7 +121,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
     final tasks = state.asData?.value ?? <Task>[];
     final idSet = ids.toSet();
     final newTasks = tasks.where((t) => !idSet.contains(t.id)).toList();
-    
+
     await _setTasks(newTasks);
     state = AsyncValue.data(newTasks);
 
@@ -106,7 +130,9 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
         await NotificationService.instance.cancelNotification(id);
       }
     }
-    await WidgetService.updateWidgetData(newTasks.where((t) => !t.isDeleted).toList());
+    await WidgetService.updateWidgetData(
+      newTasks.where((t) => !t.isDeleted).toList(),
+    );
   }
 
   // Task의 완료 상태를 토글합니다.
@@ -119,11 +145,11 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
   Future<void> toggleChecklistItem(int taskId, int itemIndex) async {
     final tasks = state.asData?.value ?? <Task>[];
     final task = tasks.firstWhere((t) => t.id == taskId);
-    
+
     final newDetails = List<ChecklistItem>.from(task.details);
     final item = newDetails[itemIndex];
     newDetails[itemIndex] = item.copyWith(isDone: !item.isDone);
-    
+
     final updatedTask = task.copyWith(details: newDetails);
     await updateTask(updatedTask);
   }
@@ -143,11 +169,11 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 }
 
 // 전체 Task 리스트를 관리하는 메인 Provider
-final taskListProvider =
-    AsyncNotifierProvider<TaskListNotifier, List<Task>>(() {
-  return TaskListNotifier();
-});
-
+final taskListProvider = AsyncNotifierProvider<TaskListNotifier, List<Task>>(
+  () {
+    return TaskListNotifier();
+  },
+);
 
 // 활성화된(삭제되지 않은) Task만 필터링하여 제공하는 Provider
 final activeTasksProvider = Provider<List<Task>>((ref) {
