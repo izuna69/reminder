@@ -73,23 +73,32 @@ class NotificationService {
     }
   }
 
+  // Task ID와 관련된 모든 알림을 취소합니다. (Payload 기반)
+  Future<void> cancelNotificationsForTask(int taskId) async {
+    final pendingRequests =
+        await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
+    for (var request in pendingRequests) {
+      if (request.payload == taskId.toString()) {
+        await _flutterLocalNotificationsPlugin.cancel(request.id);
+      }
+    }
+  }
+
   // 알림 예약
   Future<void> scheduleNotification(Task task) async {
-    // task.id가 null이면 예외 발생 또는 다른 방식으로 처리
-    if (task.id == null) {
-      print("Task ID is null, cannot schedule notification.");
+    // 0. ID가 없으면 예약 불가
+    if (task.id == 0) {
+      print("Task ID is 0, cannot schedule notification.");
       return;
     }
 
+    // 1. 이 Task와 관련된 모든 기존 알림을 취소합니다.
+    await cancelNotificationsForTask(task.id);
+
+    // 2. 알람이 비활성화 상태이면 여기서 종료
     if (!task.isAlarmEnabled) {
-      await cancelNotification(task.id!);
       return;
     }
-
-    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(
-      task.dueDate,
-      tz.local,
-    );
 
     final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
@@ -104,18 +113,75 @@ class NotificationService {
       android: androidNotificationDetails,
     );
 
-    await _flutterLocalNotificationsPlugin.zonedSchedule(
-      task.id! as int, // non-null 보장
-      task.title,
-      '예정된 할 일이 있습니다.',
-      scheduledDate,
-      notificationDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
+    // 3. 주간 반복 (요일 선택) 처리
+    if (task.recurrenceRule.type == RecurrenceType.weekly &&
+        task.recurrenceRule.daysOfWeek.isNotEmpty) {
+      for (int day in task.recurrenceRule.daysOfWeek) {
+        final tz.TZDateTime scheduledDate =
+            _nextInstanceOfDay(task.dueDate, day);
+
+        // 각 요일별로 고유 ID 생성 (음수 ID 충돌 방지 및 식별 용이성)
+        // Task ID와 요일을 조합하여 고유성을 보장합니다.
+        final int notificationId = (task.id * 10) + day;
+
+        await _flutterLocalNotificationsPlugin.zonedSchedule(
+          notificationId,
+          task.title,
+          '매주 ${['월', '화', '수', '목', '금', '토', '일'][day - 1]}요일 반복',
+          scheduledDate,
+          notificationDetails,
+          payload: task.id.toString(), // Task ID를 payload에 저장
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+        );
+      }
+    } else {
+      // 4. 그 외(매일, 매월, 매년, 없음) 반복 처리
+      final tz.TZDateTime scheduledDate = tz.TZDateTime.from(
+        task.dueDate,
+        tz.local,
+      );
+
+      DateTimeComponents? matchDateTimeComponents;
+      switch (task.recurrenceRule.type) {
+        case RecurrenceType.daily:
+          matchDateTimeComponents = DateTimeComponents.time;
+          break;
+        case RecurrenceType.monthly:
+          matchDateTimeComponents = DateTimeComponents.dayOfMonthAndTime;
+          break;
+        case RecurrenceType.yearly:
+          matchDateTimeComponents = DateTimeComponents.dateAndTime;
+          break;
+        case RecurrenceType.weekly: // daysOfWeek가 비어있는 경우
+        case RecurrenceType.none:
+          break;
+      }
+
+      await _flutterLocalNotificationsPlugin.zonedSchedule(
+        task.id, // 기본 Task ID 사용
+        task.title,
+        '예정된 할 일이 있습니다.',
+        scheduledDate,
+        notificationDetails,
+        payload: task.id.toString(), // Task ID를 payload에 저장
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: matchDateTimeComponents,
+      );
+    }
   }
 
-  // 알림 취소
-  Future<void> cancelNotification(int id) async {
-    await _flutterLocalNotificationsPlugin.cancel(id);
+  // 특정 요일에 맞는 다음 날짜 및 시간 계산
+  tz.TZDateTime _nextInstanceOfDay(DateTime dateTime, int day) {
+    tz.TZDateTime scheduledDate = tz.TZDateTime.from(dateTime, tz.local);
+    // 현재 날짜의 요일과 목표 요일이 다르면, 다음 날로 이동하며 요일 맞춤
+    while (scheduledDate.weekday != day) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+    // 만약 계산된 날짜/시간이 현재 시간보다 이전이면 다음 주로 점프
+    if (scheduledDate.isBefore(tz.TZDateTime.now(tz.local))) {
+      scheduledDate = scheduledDate.add(const Duration(days: 7));
+    }
+    return scheduledDate;
   }
 }

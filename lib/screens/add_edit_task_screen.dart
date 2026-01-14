@@ -5,7 +5,7 @@ import 'package:reminder/models/task.dart';
 import 'package:reminder/providers/task_provider.dart';
 
 class AddEditTaskScreen extends ConsumerStatefulWidget {
-  final Task? task; // 수정을 위해 기존 Task 객체를 받을 수 있음
+  final Task? task;
 
   const AddEditTaskScreen({super.key, this.task});
 
@@ -21,6 +21,10 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
   late List<TextEditingController> _checklistItemControllers;
   late bool _isAlarmEnabled;
 
+  // New state variables for recurrence
+  late RecurrenceType _recurrenceType;
+  late List<bool> _selectedDays; // 0 = Monday, 6 = Sunday
+
   @override
   void initState() {
     super.initState();
@@ -31,6 +35,14 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
         .map((item) => TextEditingController(text: item.text))
         .toList();
     _isAlarmEnabled = widget.task?.isAlarmEnabled ?? true;
+
+    // Initialize new recurrence state
+    final rule = widget.task?.recurrenceRule ?? const RecurrenceRule();
+    _recurrenceType = rule.type;
+    _selectedDays = List.generate(7, (index) {
+      // daysOfWeek uses 1-7 for Mon-Sun. We use 0-6 for Mon-Sun.
+      return rule.daysOfWeek.contains(index + 1);
+    });
   }
 
   @override
@@ -87,6 +99,30 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
+      // --- Construct the RecurrenceRule ---
+      RecurrenceRule newRule;
+      if (_recurrenceType == RecurrenceType.weekly) {
+        final List<int> selectedDaysList = [];
+        for (int i = 0; i < _selectedDays.length; i++) {
+          if (_selectedDays[i]) {
+            selectedDaysList.add(i + 1); // Convert 0-6 index to 1-7 day
+          }
+        }
+        // If user selected 'weekly' but no days, revert to 'none'
+        if (selectedDaysList.isEmpty) {
+          newRule = const RecurrenceRule(type: RecurrenceType.none);
+        } else {
+          newRule = RecurrenceRule(
+            type: RecurrenceType.weekly,
+            daysOfWeek: selectedDaysList,
+          );
+        }
+      } else {
+        // For none, daily, monthly, yearly
+        newRule = RecurrenceRule(type: _recurrenceType);
+      }
+      // --- End of RecurrenceRule construction ---
+
       final updatedChecklist = List.generate(_checklistItemControllers.length, (
         index,
       ) {
@@ -96,7 +132,6 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
         );
       });
 
-      // 수정 모드 여부 확인
       final isEditing = widget.task != null;
 
       if (isEditing) {
@@ -105,16 +140,17 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
           details: updatedChecklist,
           dueDate: _selectedDate,
           isAlarmEnabled: _isAlarmEnabled,
+          recurrenceRule: newRule, // Use new rule object
         );
         await ref.read(taskListProvider.notifier).updateTask(updatedTask);
       } else {
-        // ID는 notifier에서 생성하므로 여기서는 임의의 값(0)으로 전달
         final newTask = Task(
           id: 0,
           title: _titleController.text,
           details: updatedChecklist,
           dueDate: _selectedDate,
           isAlarmEnabled: _isAlarmEnabled,
+          recurrenceRule: newRule, // Use new rule object
         );
         await ref.read(taskListProvider.notifier).addTask(newTask);
       }
@@ -171,6 +207,57 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
                   });
                 },
               ),
+              if (_isAlarmEnabled) ...[
+                const SizedBox(height: 8),
+                DropdownButtonFormField<RecurrenceType>(
+                  value: _recurrenceType,
+                  decoration: const InputDecoration(
+                    labelText: '반복 유형',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: RecurrenceType.values.map((type) {
+                    return DropdownMenuItem<RecurrenceType>(
+                      value: type,
+                      child: Text(
+                        switch (type) {
+                          RecurrenceType.none => '없음',
+                          RecurrenceType.daily => '매일',
+                          RecurrenceType.weekly => '매주 (요일 선택)',
+                          RecurrenceType.monthly => '매월',
+                          RecurrenceType.yearly => '매년',
+                        },
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _recurrenceType = value;
+                      });
+                    }
+                  },
+                ),
+                if (_recurrenceType == RecurrenceType.weekly)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Wrap(
+                      spacing: 6.0,
+                      alignment: WrapAlignment.center,
+                      children: List.generate(7, (index) {
+                        final dayLabels = ['월', '화', '수', '목', '금', '토', '일'];
+                        return FilterChip(
+                          label: Text(dayLabels[index]),
+                          selected: _selectedDays[index],
+                          onSelected: (bool selected) {
+                            setState(() {
+                              _selectedDays[index] = selected;
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ),
+              ],
               const SizedBox(height: 16),
               Text('상세 항목', style: Theme.of(context).textTheme.titleMedium),
               ...List.generate(_checklistItems.length, (index) {
@@ -181,14 +268,10 @@ class _AddEditTaskScreenState extends ConsumerState<AddEditTaskScreen> {
                       child: TextFormField(
                         controller: _checklistItemControllers[index],
                         decoration: InputDecoration(
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              width: 1,
-                              color: Colors.white60,
-                            ),
-                            borderRadius: BorderRadius.circular(17),
-                          ),
                           labelText: '항목 ${index + 1}',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),

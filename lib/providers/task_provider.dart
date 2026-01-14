@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:reminder/models/task.dart';
@@ -42,25 +43,6 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
     await _setTasks(newTasks);
     state = AsyncValue.data(newTasks);
     _updateServices(task);
-  }
-
-  // 상세 항목의 순서를 변경하고 저장합니다.
-  Future<void> reorderChecklistItem(
-    int taskId,
-    int oldIndex,
-    int newIndex,
-  ) async {
-    final tasks = state.valueOrNull ?? [];
-    final task = tasks.firstWhere((t) => t.id == taskId);
-
-    // 상세 항목 리스트 복사 및 순서 재배치
-    final newDetails = List<ChecklistItem>.from(task.details);
-    final item = newDetails.removeAt(oldIndex);
-    newDetails.insert(newIndex, item);
-
-    // 변경된 리스트로 Task 업데이트
-    final updatedTask = task.copyWith(details: newDetails);
-    await updateTask(updatedTask);
   }
 
   // Task를 휴지통으로 보냅니다 (soft-delete).
@@ -109,7 +91,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
     state = AsyncValue.data(newTasks);
 
     if (!kIsWeb) {
-      await NotificationService.instance.cancelNotification(id);
+      await NotificationService.instance.cancelNotificationsForTask(id);
     }
     await WidgetService.updateWidgetData(
       newTasks.where((t) => !t.isDeleted).toList(),
@@ -127,7 +109,7 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
 
     if (!kIsWeb) {
       for (final id in ids) {
-        await NotificationService.instance.cancelNotification(id);
+        await NotificationService.instance.cancelNotificationsForTask(id);
       }
     }
     await WidgetService.updateWidgetData(
@@ -157,12 +139,14 @@ class TaskListNotifier extends AsyncNotifier<List<Task>> {
   // 서비스 업데이트 헬퍼
   Future<void> _updateServices(Task task) async {
     final tasks = state.asData?.value ?? <Task>[];
-    await WidgetService.updateWidgetData(tasks.where((t) => !t.isDeleted).toList());
+    await WidgetService.updateWidgetData(
+      tasks.where((t) => !t.isDeleted).toList(),
+    );
     if (!kIsWeb) {
       if (!task.isCompleted && !task.isDeleted) {
         await NotificationService.instance.scheduleNotification(task);
       } else {
-        await NotificationService.instance.cancelNotification(task.id);
+        await NotificationService.instance.cancelNotificationsForTask(task.id);
       }
     }
   }

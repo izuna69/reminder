@@ -58,47 +58,18 @@ class TaskDetailScreen extends ConsumerWidget {
                 Text('상세 항목', style: Theme.of(context).textTheme.titleLarge),
                 const Divider(),
                 Expanded(
-                  child: ReorderableListView.builder(
+                  child: ListView.builder(
                     itemCount: latestTask.details.length,
-                    buildDefaultDragHandles: false,
-                    onReorder: (int oldIndex, int newIndex) {
-                      if (oldIndex < newIndex) {
-                        newIndex -= 1;
-                      }
-                      // [추가] 이동이 끝난 후 실제 데이터 순서를 변경하는 함수를 호출함
-                      ref
-                          .read(taskListProvider.notifier)
-                          .reorderChecklistItem(
-                            latestTask.id!,
-                            oldIndex,
-                            newIndex,
-                          );
-                    },
                     itemBuilder: (context, index) {
                       final item = latestTask.details[index];
                       return ListTile(
-                        key: ValueKey('$index-${item.text}'),
-                        leading: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ReorderableDragStartListener(
-                              index: index,
-                              // 가로줄 3개(reorder) 아이콘
-                              child: const Icon(
-                                Icons.reorder,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Checkbox(
-                              value: item.isDone,
-                              onChanged: (bool? value) {
-                                ref
-                                    .read(taskListProvider.notifier)
-                                    .toggleChecklistItem(latestTask.id!, index);
-                              },
-                            ),
-                          ],
+                        leading: Checkbox(
+                          value: item.isDone,
+                          onChanged: (bool? value) {
+                            ref
+                                .read(taskListProvider.notifier)
+                                .toggleChecklistItem(latestTask.id!, index);
+                          },
                         ),
                         title: Text(
                           item.text,

@@ -1,5 +1,50 @@
 import 'package:flutter/foundation.dart';
 
+// RecurrenceRule 내에서 사용할 반복 유형 정의
+enum RecurrenceType { none, daily, weekly, monthly, yearly }
+
+@immutable
+class RecurrenceRule {
+  final RecurrenceType type;
+  // 주간 반복 시 사용 (1: 월요일, 7: 일요일)
+  final List<int> daysOfWeek;
+
+  const RecurrenceRule({
+    this.type = RecurrenceType.none,
+    this.daysOfWeek = const [],
+  });
+
+  RecurrenceRule copyWith({
+    RecurrenceType? type,
+    List<int>? daysOfWeek,
+  }) {
+    return RecurrenceRule(
+      type: type ?? this.type,
+      daysOfWeek: daysOfWeek ?? this.daysOfWeek,
+    );
+  }
+
+  factory RecurrenceRule.fromJson(Map<String, dynamic> json) {
+    return RecurrenceRule(
+      type: RecurrenceType.values.firstWhere(
+        (e) => e.name == json['type'],
+        orElse: () => RecurrenceType.none,
+      ),
+      daysOfWeek: List<int>.from(json['daysOfWeek'] ?? []),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type.name,
+      'daysOfWeek': daysOfWeek,
+    };
+  }
+
+  // 반복 규칙이 설정되었는지 확인하는 getter
+  bool get isEnabled => type != RecurrenceType.none;
+}
+
 @immutable
 class ChecklistItem {
   final String text;
@@ -36,8 +81,9 @@ class Task {
   final List<ChecklistItem> details;
   final DateTime dueDate;
   final bool isCompleted;
-  final bool isDeleted; // isDeleted 속성 추가
+  final bool isDeleted;
   final bool isAlarmEnabled;
+  final RecurrenceRule recurrenceRule;
 
   const Task({
     required this.id,
@@ -45,8 +91,9 @@ class Task {
     this.details = const [],
     required this.dueDate,
     this.isCompleted = false,
-    this.isDeleted = false, // 생성자에 추가
+    this.isDeleted = false,
     this.isAlarmEnabled = true,
+    this.recurrenceRule = const RecurrenceRule(),
   });
 
   Task copyWith({
@@ -55,8 +102,9 @@ class Task {
     List<ChecklistItem>? details,
     DateTime? dueDate,
     bool? isCompleted,
-    bool? isDeleted, // copyWith에 추가
+    bool? isDeleted,
     bool? isAlarmEnabled,
+    RecurrenceRule? recurrenceRule,
   }) {
     return Task(
       id: id ?? this.id,
@@ -64,8 +112,9 @@ class Task {
       details: details ?? this.details,
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
-      isDeleted: isDeleted ?? this.isDeleted, // copyWith에 추가
+      isDeleted: isDeleted ?? this.isDeleted,
       isAlarmEnabled: isAlarmEnabled ?? this.isAlarmEnabled,
+      recurrenceRule: recurrenceRule ?? this.recurrenceRule,
     );
   }
 
@@ -80,8 +129,11 @@ class Task {
       details: detailsList,
       dueDate: DateTime.parse(json['dueDate']),
       isCompleted: json['isCompleted'],
-      isDeleted: json['isDeleted'] ?? false, // fromJson에 추가
+      isDeleted: json['isDeleted'] ?? false,
       isAlarmEnabled: json['isAlarmEnabled'] ?? true,
+      recurrenceRule: json['recurrenceRule'] != null
+          ? RecurrenceRule.fromJson(json['recurrenceRule'])
+          : const RecurrenceRule(),
     );
   }
 
@@ -92,8 +144,9 @@ class Task {
       'details': details.map((i) => i.toJson()).toList(),
       'dueDate': dueDate.toIso8601String(),
       'isCompleted': isCompleted,
-      'isDeleted': isDeleted, // toJson에 추가
+      'isDeleted': isDeleted,
       'isAlarmEnabled': isAlarmEnabled,
+      'recurrenceRule': recurrenceRule.toJson(),
     };
   }
 }
