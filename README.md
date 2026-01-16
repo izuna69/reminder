@@ -44,7 +44,7 @@ Flutter로 제작된 모바일 중심의 할 일 관리 및 알림 애플리케�
 ---
 
 ## 아키텍처 구조
-
+ 
 본 프로젝트는 **Provider 기반의 클린 아키텍처**를 지향하며 관심사를 분리합니다.
 
 * `lib/models`: 불변(Immutable) 데이터 모델 (`Task`, `ChecklistItem`).
