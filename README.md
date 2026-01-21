@@ -39,7 +39,7 @@ Flutter로 제작된 모바일 중심의 할 일 관리 및 알림 애플리케�
 | **State Management** | `flutter_riverpod` (StateNotifier Pattern) |
 | **Notifications** | `flutter_local_notifications` |
 | **Home Widget** | `home_widget` |
-| **Database** | In-memory (Temporary storage) |
+| **Database** | In-memory (sharedpreferences) |
 
 ---
 
