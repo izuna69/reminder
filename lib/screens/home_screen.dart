@@ -42,7 +42,7 @@ class HomeScreen extends ConsumerWidget {
             const SizedBox(
               height: 65,
               child: DrawerHeader(
-                decoration: BoxDecoration(color: Colors.black12),
+                decoration: BoxDecoration(color: Colors.blueAccent),
                 child: Text("메뉴"),
               ),
             ),
