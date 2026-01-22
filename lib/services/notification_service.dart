@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:reminder/models/task.dart';
@@ -12,6 +14,8 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  static const String _snoozeActionId = 'snooze';
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'reminder_channel_id', // id
@@ -44,22 +48,47 @@ class NotificationService {
     // iOS 초기화 설정
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
     final InitializationSettings initializationSettings =
         InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
     // 플러그인 초기화
-    await _flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    await _flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: onDidReceiveNotificationResponse,
+    );
 
     // 권한 요청
     await _requestPermissions();
+  }
+
+  // 알림 응답 처리 (백그라운드에서도 동작)
+  static void onDidReceiveNotificationResponse(
+      NotificationResponse notificationResponse) async {
+    if (notificationResponse.actionId == _snoozeActionId &&
+        notificationResponse.payload != null) {
+      // Snooze 버튼이 눌렸을 때
+      final task = Task.fromJson(jsonDecode(notificationResponse.payload!));
+      await NotificationService.instance._rescheduleSnoozedNotification(task);
+    } else {
+      // 알림 자체를 눌렀을 때의 로직 (필요 시 구현)
+    }
+  }
+
+  // Snooze된 알림을 다시 예약
+  Future<void> _rescheduleSnoozedNotification(Task task) async {
+    final snoozedTask = task.copyWith(
+      dueDate: DateTime.now().add(const Duration(minutes: 5)),
+      recurrenceRule: const RecurrenceRule(type: RecurrenceType.none),
+    );
+    await scheduleNotification(snoozedTask);
   }
 
   // 권한 요청
@@ -78,8 +107,19 @@ class NotificationService {
     final pendingRequests =
         await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
     for (var request in pendingRequests) {
-      if (request.payload == taskId.toString()) {
-        await _flutterLocalNotificationsPlugin.cancel(request.id);
+      // 페이로드를 디코딩하여 taskId를 확인해야 함
+      if (request.payload != null) {
+        try {
+          final task = Task.fromJson(jsonDecode(request.payload!));
+          if (task.id == taskId) {
+            await _flutterLocalNotificationsPlugin.cancel(request.id);
+          }
+        } catch (e) {
+          // 페이로드 파싱에 실패한 경우 (이전 버전의 페이로드일 수 있음)
+          if (request.payload == taskId.toString()) {
+            await _flutterLocalNotificationsPlugin.cancel(request.id);
+          }
+        }
       }
     }
   }
@@ -108,10 +148,20 @@ class NotificationService {
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,
+      actions: <AndroidNotificationAction>[
+        const AndroidNotificationAction(
+          _snoozeActionId,
+          '5분 뒤에 다시 알림',
+          showsUserInterface: true,
+        ),
+      ],
     );
     final NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
     );
+
+    // Task 객체를 JSON 문자열로 직렬화
+    final String taskPayload = jsonEncode(task.toJson());
 
     // 3. 주간 반복 (요일 선택) 처리
     if (task.recurrenceRule.type == RecurrenceType.weekly &&
@@ -130,7 +180,7 @@ class NotificationService {
           '매주 ${['월', '화', '수', '목', '금', '토', '일'][day - 1]}요일 반복',
           scheduledDate,
           notificationDetails,
-          payload: task.id.toString(), // Task ID를 payload에 저장
+          payload: taskPayload,
           androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
           matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
         );
@@ -164,7 +214,7 @@ class NotificationService {
         '예정된 할 일이 있습니다.',
         scheduledDate,
         notificationDetails,
-        payload: task.id.toString(), // Task ID를 payload에 저장
+        payload: taskPayload,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: matchDateTimeComponents,
       );
