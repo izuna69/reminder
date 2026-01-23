@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:reminder/providers/task_provider.dart';
 import 'package:reminder/providers/theme_provider.dart';
 import 'package:reminder/screens/add_edit_task_screen.dart';
+import 'package:reminder/screens/setting_screen.dart';
 import 'package:reminder/screens/task_detail_screen.dart';
 import 'package:reminder/screens/trash_screen.dart';
 
@@ -53,6 +54,17 @@ class HomeScreen extends ConsumerWidget {
                 Navigator.of(context).pop(); // Drawer 닫기
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const TrashScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('설정'),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const SettingScreen(),
+                  ),
                 );
               },
             ),

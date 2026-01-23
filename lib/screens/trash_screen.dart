@@ -50,6 +50,7 @@ class _TrashScreenState extends ConsumerState<TrashScreen> {
   AppBar _buildDefaultAppBar() {
     return AppBar(
       title: const Text('휴지통'),
+
       actions: [TextButton(onPressed: _toggleEditMode, child: Text("전체선택"))],
     );
   }

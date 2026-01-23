@@ -36,7 +36,8 @@ class NotificationService {
     // 알림 채널 생성 (Android)
     final androidPlugin = _flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(_channel);
     }
@@ -48,16 +49,16 @@ class NotificationService {
     // iOS 초기화 설정
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
     final InitializationSettings initializationSettings =
         InitializationSettings(
-      android: initializationSettingsAndroid,
-      iOS: initializationSettingsIOS,
-    );
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
     // 플러그인 초기화
     await _flutterLocalNotificationsPlugin.initialize(
@@ -71,7 +72,8 @@ class NotificationService {
 
   // 알림 응답 처리 (백그라운드에서도 동작)
   static void onDidReceiveNotificationResponse(
-      NotificationResponse notificationResponse) async {
+    NotificationResponse notificationResponse,
+  ) async {
     if (notificationResponse.actionId == _snoozeActionId &&
         notificationResponse.payload != null) {
       // Snooze 버튼이 눌렸을 때
@@ -95,7 +97,8 @@ class NotificationService {
   Future<void> _requestPermissions() async {
     final plugin = _flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     if (plugin != null) {
       await plugin.requestNotificationsPermission();
       await plugin.requestExactAlarmsPermission();
@@ -104,8 +107,8 @@ class NotificationService {
 
   // Task ID와 관련된 모든 알림을 취소합니다. (Payload 기반)
   Future<void> cancelNotificationsForTask(int taskId) async {
-    final pendingRequests =
-        await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
+    final pendingRequests = await _flutterLocalNotificationsPlugin
+        .pendingNotificationRequests();
     for (var request in pendingRequests) {
       // 페이로드를 디코딩하여 taskId를 확인해야 함
       if (request.payload != null) {
@@ -142,20 +145,20 @@ class NotificationService {
 
     final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-      _channel.id,
-      _channel.name,
-      channelDescription: _channel.description,
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-      actions: <AndroidNotificationAction>[
-        const AndroidNotificationAction(
-          _snoozeActionId,
-          '5분 뒤에 다시 알림',
-          showsUserInterface: true,
-        ),
-      ],
-    );
+          _channel.id,
+          _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: false,
+          actions: <AndroidNotificationAction>[
+            const AndroidNotificationAction(
+              _snoozeActionId,
+              '5분 뒤에 다시 알림',
+              showsUserInterface: true,
+            ),
+          ],
+        );
     final NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
     );
@@ -167,8 +170,10 @@ class NotificationService {
     if (task.recurrenceRule.type == RecurrenceType.weekly &&
         task.recurrenceRule.daysOfWeek.isNotEmpty) {
       for (int day in task.recurrenceRule.daysOfWeek) {
-        final tz.TZDateTime scheduledDate =
-            _nextInstanceOfDay(task.dueDate, day);
+        final tz.TZDateTime scheduledDate = _nextInstanceOfDay(
+          task.dueDate,
+          day,
+        );
 
         // 각 요일별로 고유 ID 생성 (음수 ID 충돌 방지 및 식별 용이성)
         // Task ID와 요일을 조합하여 고유성을 보장합니다.
