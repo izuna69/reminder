@@ -4,9 +4,9 @@ import 'package:intl/intl.dart';
 import 'package:reminder/providers/task_provider.dart';
 import 'package:reminder/providers/theme_provider.dart';
 import 'package:reminder/screens/add_edit_task_screen.dart';
+import 'package:reminder/screens/settings_screen.dart'; // 설정 화면 파일을 불러옴
 import 'package:reminder/screens/task_detail_screen.dart';
 import 'package:reminder/screens/trash_screen.dart';
-import 'package:reminder/screens/settings_screen.dart'; // 설정 화면 파일을 불러옴
 
 // 홈 화면 위젯
 class HomeScreen extends ConsumerWidget {
@@ -64,7 +64,9 @@ class HomeScreen extends ConsumerWidget {
                 Navigator.of(context).pop();
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
                 );
               }, // ← 여기가 64번 줄 근처가 됩니다.
             ),
