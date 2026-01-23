@@ -20,3 +20,14 @@ class ThemeNotifier extends Notifier<ThemeMode> {
 final themeProvider = NotifierProvider<ThemeNotifier, ThemeMode>(() {
   return ThemeNotifier();
 });
+
+// 사용자가 선택한 테마 전용 색상을 저장하는 장소입니다. (기본값: 파랑)
+class ColorNotifier extends Notifier<Color> {
+  @override
+  Color build() => Colors.blue; // 기본색
+
+  void setColor(Color color) => state = color;
+}
+
+final seedColorProvider = NotifierProvider<ColorNotifier, Color>(() => ColorNotifier());
+
