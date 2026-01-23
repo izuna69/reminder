@@ -6,6 +6,7 @@ import 'package:reminder/providers/theme_provider.dart';
 import 'package:reminder/screens/add_edit_task_screen.dart';
 import 'package:reminder/screens/task_detail_screen.dart';
 import 'package:reminder/screens/trash_screen.dart';
+import 'package:reminder/screens/settings_screen.dart'; // 설정 화면 파일을 불러옴
 
 // 홈 화면 위젯
 class HomeScreen extends ConsumerWidget {
@@ -39,11 +40,13 @@ class HomeScreen extends ConsumerWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const SizedBox(
+            SizedBox( // const를 뺐습니다.
               height: 65,
               child: DrawerHeader(
-                decoration: BoxDecoration(color: Colors.blueAccent),
-                child: Text("메뉴"),
+                // Colors.blueAccent 대신 테마 색상을 불러오도록 수정
+                decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                // 배경색에 맞춰 글자색도 바뀌도록 스타일만 추가
+                child: Text("메뉴", style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer)),
               ),
             ),
             ListTile(
@@ -55,6 +58,17 @@ class HomeScreen extends ConsumerWidget {
                   MaterialPageRoute(builder: (context) => const TrashScreen()),
                 );
               },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('설정'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              }, // ← 여기가 64번 줄 근처가 됩니다.
             ),
           ],
         ),
